@@ -25,7 +25,7 @@ class LibraryViewModel : ViewModel() {
     fun loadLibrary() {
         GlobalScope.launch {
             _isLoading.value = true
-            Thread.sleep(800)
+            Thread.sleep(0)
             _libraryItems.value = FakeMediaRepository.libraryItems
             _isLoading.value = false
         }
