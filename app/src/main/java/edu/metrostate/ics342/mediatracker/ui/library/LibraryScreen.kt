@@ -23,6 +23,8 @@ import coil.compose.AsyncImage
 import edu.metrostate.ics342.mediatracker.data.model.LibraryItem
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.creatorCredit
+import androidx.compose.runtime.saveable.rememberSaveable
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,8 +35,10 @@ fun LibraryScreen(
     val items     by viewModel.libraryItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    var selectedStatus by remember { mutableStateOf(LibraryStatus.WANT_TO) }
-    var selectedType   by remember { mutableStateOf("all") }
+    var selectedStatusName by rememberSaveable { mutableStateOf(LibraryStatus.WANT_TO.name) }
+    var selectedType by rememberSaveable { mutableStateOf("all") }
+
+    val selectedStatus = LibraryStatus.valueOf(selectedStatusName)
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.library_title)) })
@@ -71,7 +75,7 @@ fun LibraryScreen(
                     shape    = SegmentedButtonDefaults.itemShape(
                         index = index, count = LibraryStatus.entries.size),
                     selected = selectedStatus == status,
-                    onClick  = { selectedStatus = status },
+                    onClick = { selectedStatusName = status.name },
                     label    = { Text(stringResource(status.labelRes)) }
                 )
             }
