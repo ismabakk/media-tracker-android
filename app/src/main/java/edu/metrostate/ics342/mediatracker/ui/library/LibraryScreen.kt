@@ -3,6 +3,7 @@ package edu.metrostate.ics342.mediatracker.ui.library
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,25 +39,26 @@ fun LibraryScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.library_title)) })
 
-        Row(
+        LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf(
-                "all"   to edu.metrostate.ics342.mediatracker.R.string.filter_all,
-                "book"  to edu.metrostate.ics342.mediatracker.R.string.filter_books,
-                "movie" to edu.metrostate.ics342.mediatracker.R.string.filter_movies,
-                "show"  to edu.metrostate.ics342.mediatracker.R.string.filter_shows
-            )
-                .forEach { (key, labelRes) ->
-                    FilterChip(
-                        selected = selectedType == key,
-                        onClick  = { selectedType = key },
-                        label    = { Text(stringResource(labelRes)) }
-                    )
-                }
+            items(
+                listOf(
+                    "all" to edu.metrostate.ics342.mediatracker.R.string.filter_all,
+                    "book" to edu.metrostate.ics342.mediatracker.R.string.filter_books,
+                    "movie" to edu.metrostate.ics342.mediatracker.R.string.filter_movies,
+                    "show" to edu.metrostate.ics342.mediatracker.R.string.filter_shows
+                )
+            ) { (key, labelRes) ->
+                FilterChip(
+                    selected = selectedType == key,
+                    onClick = { selectedType = key },
+                    label = { Text(stringResource(labelRes)) }
+                )
+            }
         }
 
         SingleChoiceSegmentedButtonRow(
@@ -64,10 +66,10 @@ fun LibraryScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp)
         ) {
-            LibraryStatus.values().forEachIndexed { index, status ->
+            LibraryStatus.entries.forEachIndexed { index, status ->
                 SegmentedButton(
                     shape    = SegmentedButtonDefaults.itemShape(
-                        index = index, count = LibraryStatus.values().size),
+                        index = index, count = LibraryStatus.entries.size),
                     selected = selectedStatus == status,
                     onClick  = { selectedStatus = status },
                     label    = { Text(stringResource(status.labelRes)) }
@@ -143,7 +145,7 @@ private fun LibraryItemCard(
             title = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.action_change_status)) },
             text = {
                 Column {
-                    LibraryStatus.values().forEach { s ->
+                    LibraryStatus.entries.forEach { s ->
                         TextButton(
                             onClick  = { onStatusChange(s); statusDialogVisible = false },
                             modifier = Modifier.fillMaxWidth()
