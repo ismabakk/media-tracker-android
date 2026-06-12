@@ -22,7 +22,7 @@
 
 I looked over a classmate - Issa Ali's RegisterScreen implementation> I looked at how his registration form and how it handled user input validation and navigation. I also looked over the updates that was made to the string resources and reveiwed how they connected to the UI in the registration screen.
 
-### What I Noticed.
+### What I Noticed
 
 The one thing that I noticed was  the registration screen had included validation through the attemptRegister() function. Instead of allowing registration immediately it waits and the function checks whether the display name, email, username, password, and confirm password fields all have the values and whether the passwords match before continuing. This caught my eye because my implementation only handled navigation whenever I touched the sign Up button. Issas implementation adds the additional layer of user feedback that prevents users from moving forward with invalid data.
 
