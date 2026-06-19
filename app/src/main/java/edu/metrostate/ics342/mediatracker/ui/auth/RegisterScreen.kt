@@ -10,20 +10,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import edu.metrostate.ics342.mediatracker.R
 
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    viewModel: RegisterViewModel = viewModel()
 ) {
-    var displayName by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+    val displayName by viewModel.displayName.collectAsState()
+    val username by viewModel.username.collectAsState()
+    val email by viewModel.email.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val confirmPassword by viewModel.confirmPassword.collectAsState()
+    val registerState by viewModel.registerState.collectAsState()
+
+    LaunchedEffect(registerState) {
+        if (registerState is RegisterViewModel.RegisterUiState.Success) {
+            viewModel.resetRegisterState()
+            onRegisterSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -53,48 +64,69 @@ fun RegisterScreen(
             style = MaterialTheme.typography.headlineSmall
         )
 
-        Text(
-            text = "Join the community"
-        )
+        Text(text = "Join the community")
 
         Spacer(modifier = Modifier.height(20.dp))
 
         OutlinedTextField(
             value = displayName,
-            onValueChange = { displayName = it },
-            label = { Text("Display Name") }
+            onValueChange = viewModel::onDisplayNameChange,
+            label = { Text("Display Name") },
+            singleLine = true
         )
 
         OutlinedTextField(
             value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") }
+            onValueChange = viewModel::onUsernameChange,
+            label = { Text("Username") },
+            singleLine = true
         )
 
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") }
+            onValueChange = viewModel::onEmailChange,
+            label = { Text("Email") },
+            singleLine = true
         )
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = viewModel::onPasswordChange,
             label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true
         )
 
         OutlinedTextField(
             value = confirmPassword,
-            onValueChange = { confirmPassword = it },
+            onValueChange = viewModel::onConfirmPasswordChange,
             label = { Text("Confirm Password") },
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true
         )
+
+        if (registerState is RegisterViewModel.RegisterUiState.Error) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(
+                    (registerState as RegisterViewModel.RegisterUiState.Error).msgResId
+                ),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = onRegisterSuccess) {
-            Text("Sign Up")
+        Button(
+            onClick = { viewModel.onRegisterClick() },
+            enabled = registerState !is RegisterViewModel.RegisterUiState.Loading
+        ) {
+            if (registerState is RegisterViewModel.RegisterUiState.Loading) {
+                Text("Signing Up...")
+            } else {
+                Text("Sign Up")
+            }
         }
 
         TextButton(onClick = onNavigateToLogin) {
