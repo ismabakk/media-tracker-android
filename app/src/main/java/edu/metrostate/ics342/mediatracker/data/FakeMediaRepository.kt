@@ -52,15 +52,15 @@ object FakeMediaRepository {
             director = "Christopher Nolan", publishedYear = 2014,
             averageRating = 4.6f, ratingCount = 441,
             genres = listOf("Science Fiction", "Adventure")),
-        Media(id = 8,  mediaType = "show",  title = "Severance",
+        Media(id = 8,  mediaType = "show", title = "Severance",
             creator = "Dan Erickson", network = "Apple TV+", publishedYear = 2022,
             averageRating = 4.9f, ratingCount = 317,
             genres = listOf("Thriller", "Science Fiction", "Drama")),
-        Media(id = 9,  mediaType = "show",  title = "The Bear",
+        Media(id = 9,  mediaType = "show", title = "The Bear",
             creator = "Christopher Storer", network = "FX on Hulu", publishedYear = 2022,
             averageRating = 4.8f, ratingCount = 298,
             genres = listOf("Drama", "Comedy")),
-        Media(id = 10, mediaType = "show",  title = "Andor",
+        Media(id = 10, mediaType = "show", title = "Andor",
             creator = "Tony Gilroy", network = "Disney+", publishedYear = 2022,
             averageRating = 4.7f, ratingCount = 276,
             genres = listOf("Science Fiction", "Drama", "Action")),
@@ -75,25 +75,53 @@ object FakeMediaRepository {
             "2024-01-20T10:00:00Z", "2024-01-20T10:00:00Z", mediaList[7]),
     )
 
-    private val userJordan = UserProfile("user-002", "j@example.com", "jsmith",   "Jordan Smith",  followerCount = 5,  followingCount = 10)
-    private val userPriya  = UserProfile("user-003", "p@example.com", "priya_r", "Priya Patel",   followerCount = 23, followingCount = 15)
-    private val userMarco  = UserProfile("user-004", "m@example.com", "mramos",  "Marco Ramos",   followerCount = 8,  followingCount = 4)
-    private val userSarah  = UserProfile("user-005", "s@example.com", "sarahk",  "Sarah Kim",     followerCount = 31, followingCount = 22)
+    private val userJordan = UserProfile("user-002", "j@example.com", "jsmith", "Jordan Smith", followerCount = 5, followingCount = 10)
+    private val userPriya = UserProfile("user-003", "p@example.com", "priya_r", "Priya Patel", followerCount = 23, followingCount = 15)
+    private val userMarco = UserProfile("user-004", "m@example.com", "mramos", "Marco Ramos", followerCount = 8, followingCount = 4)
+    private val userSarah = UserProfile("user-005", "s@example.com", "sarahk", "Sarah Kim", followerCount = 31, followingCount = 22)
 
     val activityFeed = listOf(
-        ActivityEvent(1, "user-002", "finished", 5, createdAt = "2024-01-22T14:30:00Z",
-            user = userJordan, media = mediaList[4]),
-        ActivityEvent(2, "user-003", "review",   8, rating = 5,
+        ActivityEvent(1, "user-002", "finished", 5,
+            createdAt = "2024-01-22T14:30:00Z",
+            user = userJordan,
+            media = mediaList[4]),
+        ActivityEvent(2, "user-003", "review", 8,
+            rating = 5,
             reviewText = "Absolutely gripping from start to finish.",
-            createdAt = "2024-01-22T11:15:00Z", user = userPriya, media = mediaList[7]),
-        ActivityEvent(3, "user-004", "added",    10, createdAt = "2024-01-21T20:00:00Z",
-            user = userMarco, media = mediaList[9]),
-        ActivityEvent(4, "user-002", "started",  9, createdAt = "2024-01-21T18:45:00Z",
-            user = userJordan, media = mediaList[8]),
-        ActivityEvent(5, "user-003", "review",   1, rating = 4,
-            createdAt = "2024-01-20T09:00:00Z", user = userPriya, media = mediaList[0]),
+            createdAt = "2024-01-22T11:15:00Z",
+            user = userPriya,
+            media = mediaList[7]),
+        ActivityEvent(3, "user-004", "added", 10,
+            createdAt = "2024-01-21T20:00:00Z",
+            user = userMarco,
+            media = mediaList[9]),
+        ActivityEvent(4, "user-002", "started", 9,
+            createdAt = "2024-01-21T18:45:00Z",
+            user = userJordan,
+            media = mediaList[8]),
+        ActivityEvent(5, "user-003", "review", 1,
+            rating = 4,
+            createdAt = "2024-01-20T09:00:00Z",
+            user = userPriya,
+            media = mediaList[0]),
     )
 
     val followers = listOf(userJordan, userPriya)
     val following = listOf(userMarco, userSarah)
+
+    fun searchMedia(query: String, type: String = "all"): List<Media> {
+        return fakeSearchResults.filter { media ->
+            val matchesQuery =
+                query.isBlank() ||
+                        media.title.contains(query, ignoreCase = true) ||
+                        media.author?.contains(query, ignoreCase = true) == true ||
+                        media.director?.contains(query, ignoreCase = true) == true ||
+                        media.creator?.contains(query, ignoreCase = true) == true
+
+            val matchesType =
+                type == "all" || media.mediaType == type
+
+            matchesQuery && matchesType
+        }
+    }
 }
