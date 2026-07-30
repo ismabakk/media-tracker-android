@@ -11,32 +11,108 @@ import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import edu.metrostate.ics342.mediatracker.data.FakeMediaRepository
-import edu.metrostate.ics342.mediatracker.data.model.Media
+import androidx.lifecycle.viewmodel.compose.viewModel
+import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
+import edu.metrostate.ics342.mediatracker.data.model.MediaDetail
 
 @Composable
 fun MediaDetailScreen(
     mediaId: Int,
     onNavigateBack: () -> Unit,
-    onWriteReview: (Int) -> Unit
+    onWriteReview: (Int) -> Unit,
+    viewModel: MediaDetailViewModel = viewModel()
 ) {
-    val media = FakeMediaRepository.searchMedia("").find { it.id == mediaId }
+    val uiState by viewModel.uiState.collectAsState()
 
-    if (media == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Media not found.")
-        }
-        return
+    LaunchedEffect(mediaId) {
+        viewModel.load(mediaId)
     }
 
+    when (val state = uiState) {
+        MediaDetailUiState.Loading -> {
+            LoadingScreen()
+        }
+
+        is MediaDetailUiState.Error -> {
+            ErrorScreen(
+                message = state.message,
+                onRetry = viewModel::retry,
+                onNavigateBack = onNavigateBack
+            )
+        }
+
+        is MediaDetailUiState.Success -> {
+            MediaDetailContent(
+                media = state.detail,
+                libraryStatus = state.libraryStatus,
+                onNavigateBack = onNavigateBack,
+                onWriteReview = onWriteReview
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoadingScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ErrorScreen(
+    message: String,
+    onRetry: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.error
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(onClick = onRetry) {
+                Text("Retry")
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            TextButton(onClick = onNavigateBack) {
+                Text("Go Back")
+            }
+        }
+    }
+}
+
+@Composable
+private fun MediaDetailContent(
+    media: MediaDetail,
+    libraryStatus: LibraryStatus?,
+    onNavigateBack: () -> Unit,
+    onWriteReview: (Int) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,14 +125,20 @@ fun MediaDetailScreen(
             horizontalArrangement = Arrangement.Start
         ) {
             IconButton(onClick = onNavigateBack) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = "Back"
+                )
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
         Surface(
-            modifier = Modifier.size(width = 120.dp, height = 160.dp),
+            modifier = Modifier.size(
+                width = 120.dp,
+                height = 160.dp
+            ),
             color = MaterialTheme.colorScheme.primaryContainer,
             shape = RoundedCornerShape(12.dp)
         ) {
@@ -86,13 +168,18 @@ fun MediaDetailScreen(
         Text(
             text = media.creatorName(),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
 
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "★ ${media.averageRating} (${media.ratingCount})",
+            text = if (media.ratingCount > 0) {
+                "★ ${media.averageRating} (${media.ratingCount})"
+            } else {
+                "Not yet rated"
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -103,9 +190,23 @@ fun MediaDetailScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            InfoBox("Year", media.publishedYear?.toString() ?: "Unknown", Modifier.weight(1f))
-            InfoBox("Type", media.mediaType.replaceFirstChar { it.uppercase() }, Modifier.weight(1f))
-            InfoBox("Genre", media.genres.firstOrNull() ?: "Unknown", Modifier.weight(1f))
+            InfoBox(
+                label = "Year",
+                value = media.publishedYear?.toString() ?: "Unknown",
+                modifier = Modifier.weight(1f)
+            )
+
+            InfoBox(
+                label = media.middleStatLabel(),
+                value = media.middleStatValue(),
+                modifier = Modifier.weight(1f)
+            )
+
+            InfoBox(
+                label = "Genre",
+                value = media.genres.firstOrNull() ?: "Unknown",
+                modifier = Modifier.weight(1f)
+            )
         }
 
         Spacer(Modifier.height(24.dp))
@@ -120,7 +221,7 @@ fun MediaDetailScreen(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Details for ${media.title}. This screen is now connected to the selected media item.",
+            text = media.description ?: "No description is available.",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.fillMaxWidth()
         )
@@ -128,10 +229,20 @@ fun MediaDetailScreen(
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick = { },
+            onClick = {
+                // Adding to the library will be connected next.
+            },
+            enabled = libraryStatus == null,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("+ Want To")
+            Text(
+                text = when (libraryStatus) {
+                    LibraryStatus.WANT_TO -> "In Library: Want To"
+                    LibraryStatus.IN_PROGRESS -> "In Library: In Progress"
+                    LibraryStatus.FINISHED -> "In Library: Finished"
+                    null -> "+ Want To"
+                }
+            )
         }
 
         Spacer(Modifier.height(12.dp))
@@ -164,6 +275,7 @@ private fun InfoBox(
                 text = label,
                 style = MaterialTheme.typography.labelSmall
             )
+
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodySmall,
@@ -174,6 +286,24 @@ private fun InfoBox(
     }
 }
 
-private fun Media.creatorName(): String {
+private fun MediaDetail.creatorName(): String {
     return author ?: director ?: creator ?: "Unknown"
+}
+
+private fun MediaDetail.middleStatLabel(): String {
+    return when (mediaType) {
+        "book" -> "Pages"
+        "movie" -> "Runtime"
+        "show" -> "Seasons"
+        else -> "Type"
+    }
+}
+
+private fun MediaDetail.middleStatValue(): String {
+    return when (mediaType) {
+        "book" -> pageCount?.toString() ?: "Unknown"
+        "movie" -> runtimeMinutes?.let { "$it min" } ?: "Unknown"
+        "show" -> seasonCount?.toString() ?: "Unknown"
+        else -> mediaType.replaceFirstChar { it.uppercase() }
+    }
 }

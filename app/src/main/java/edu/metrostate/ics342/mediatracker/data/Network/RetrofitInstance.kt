@@ -34,4 +34,7 @@ object RetrofitInstance {
 
     val userApiService: UserApiService =
         retrofit.create(UserApiService::class.java)
+
+    val mediaApiService: MediaApiService =
+        retrofit.create(MediaApiService::class.java)
 }
