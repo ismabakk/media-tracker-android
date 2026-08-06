@@ -1,13 +1,18 @@
 package edu.metrostate.ics342.mediatracker.ui.search
 
 import androidx.lifecycle.ViewModel
-import edu.metrostate.ics342.mediatracker.data.FakeMediaRepository
+import androidx.lifecycle.viewModelScope
 import edu.metrostate.ics342.mediatracker.data.model.Media
+import edu.metrostate.ics342.mediatracker.data.network.DefaultMediaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-class SearchViewModel : ViewModel() {
+class SearchViewModel(
+    private val repository: DefaultMediaRepository =
+        DefaultMediaRepository()
+) : ViewModel() {
 
     companion object {
         private const val PAGE_SIZE = 20
@@ -19,11 +24,27 @@ class SearchViewModel : ViewModel() {
     private val _selectedType = MutableStateFlow("all")
     val selectedType: StateFlow<String> = _selectedType.asStateFlow()
 
-    private val _results = MutableStateFlow<List<Media>>(emptyList())
-    val results: StateFlow<List<Media>> = _results.asStateFlow()
+    private val _results =
+        MutableStateFlow<List<Media>>(emptyList())
 
-    private var allResults: List<Media> = emptyList()
-    private var currentPage = 1
+    val results: StateFlow<List<Media>> =
+        _results.asStateFlow()
+
+    private val _isLoading =
+        MutableStateFlow(false)
+
+    val isLoading: StateFlow<Boolean> =
+        _isLoading.asStateFlow()
+
+    private val _errorMessage =
+        MutableStateFlow<String?>(null)
+
+    val errorMessage: StateFlow<String?> =
+        _errorMessage.asStateFlow()
+
+    init {
+        search()
+    }
 
     fun onQueryChange(value: String) {
         _query.value = value
@@ -36,23 +57,28 @@ class SearchViewModel : ViewModel() {
     }
 
     fun search() {
-        currentPage = 1
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
 
-        allResults = FakeMediaRepository.searchMedia(
-            query = _query.value,
-            type = _selectedType.value
-        )
-
-        _results.value = allResults.take(PAGE_SIZE)
+            try {
+                _results.value =
+                    repository.searchMedia(
+                        query = _query.value,
+                        type = _selectedType.value,
+                        limit = PAGE_SIZE
+                    )
+            } catch (error: Exception) {
+                _results.value = emptyList()
+                _errorMessage.value =
+                    error.message ?: "Unable to search media."
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun loadNextPage() {
-        val nextPage = currentPage + 1
-        val nextItems = allResults.take(nextPage * PAGE_SIZE)
-
-        if (nextItems.size > _results.value.size) {
-            currentPage = nextPage
-            _results.value = nextItems
-        }
+        // Backend pagination will be added later.
     }
 }

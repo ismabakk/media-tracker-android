@@ -5,8 +5,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material3.*
@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -31,31 +32,65 @@ fun MediaDetailScreen(
     viewModel: MediaDetailViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val actionError by viewModel.actionError.collectAsState()
+
+    val snackbarHostState = remember {
+        SnackbarHostState()
+    }
 
     LaunchedEffect(mediaId) {
         viewModel.load(mediaId)
     }
 
-    when (val state = uiState) {
-        MediaDetailUiState.Loading -> {
-            LoadingScreen()
+    LaunchedEffect(actionError) {
+        actionError?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearActionError()
         }
+    }
 
-        is MediaDetailUiState.Error -> {
-            ErrorScreen(
-                message = state.message,
-                onRetry = viewModel::retry,
-                onNavigateBack = onNavigateBack
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
             )
         }
+    ) { innerPadding ->
 
-        is MediaDetailUiState.Success -> {
-            MediaDetailContent(
-                media = state.detail,
-                libraryStatus = state.libraryStatus,
-                onNavigateBack = onNavigateBack,
-                onWriteReview = onWriteReview
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            when (val state = uiState) {
+                MediaDetailUiState.Loading -> {
+                    LoadingScreen()
+                }
+
+                is MediaDetailUiState.Error -> {
+                    ErrorScreen(
+                        message = state.message,
+                        onRetry = viewModel::retry,
+                        onNavigateBack = onNavigateBack
+                    )
+                }
+
+                is MediaDetailUiState.Success -> {
+                    MediaDetailContent(
+                        media = state.detail,
+                        libraryStatus = state.libraryStatus,
+                        isFavorited = state.isFavorited,
+                        onAddToLibrary = {
+                            viewModel.addToLibrary()
+                        },
+                        onToggleFavorite = {
+                            viewModel.toggleFavorite()
+                        },
+                        onNavigateBack = onNavigateBack,
+                        onWriteReview = onWriteReview
+                    )
+                }
+            }
         }
     }
 }
@@ -93,13 +128,17 @@ private fun ErrorScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Button(onClick = onRetry) {
+            Button(
+                onClick = onRetry
+            ) {
                 Text("Retry")
             }
 
             Spacer(Modifier.height(8.dp))
 
-            TextButton(onClick = onNavigateBack) {
+            TextButton(
+                onClick = onNavigateBack
+            ) {
                 Text("Go Back")
             }
         }
@@ -110,6 +149,9 @@ private fun ErrorScreen(
 private fun MediaDetailContent(
     media: MediaDetail,
     libraryStatus: LibraryStatus?,
+    isFavorited: Boolean,
+    onAddToLibrary: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onNavigateBack: () -> Unit,
     onWriteReview: (Int) -> Unit
 ) {
@@ -124,9 +166,11 @@ private fun MediaDetailContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
         ) {
-            IconButton(onClick = onNavigateBack) {
+            IconButton(
+                onClick = onNavigateBack
+            ) {
                 Icon(
-                    imageVector = Icons.Filled.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
                 )
             }
@@ -142,10 +186,12 @@ private fun MediaDetailContent(
             color = MaterialTheme.colorScheme.primaryContainer,
             shape = RoundedCornerShape(12.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     imageVector = when (media.mediaType) {
-                        "book" -> Icons.Outlined.MenuBook
+                        "book" -> Icons.AutoMirrored.Outlined.MenuBook
                         "movie" -> Icons.Outlined.Movie
                         else -> Icons.Outlined.Tv
                     },
@@ -229,26 +275,51 @@ private fun MediaDetailContent(
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick = {
-                // Adding to the library will be connected next.
-            },
+            onClick = onAddToLibrary,
             enabled = libraryStatus == null,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = when (libraryStatus) {
-                    LibraryStatus.WANT_TO -> "In Library: Want To"
-                    LibraryStatus.IN_PROGRESS -> "In Library: In Progress"
-                    LibraryStatus.FINISHED -> "In Library: Finished"
-                    null -> "+ Want To"
+                    LibraryStatus.WANT_TO ->
+                        "In Library: Want To"
+
+                    LibraryStatus.IN_PROGRESS ->
+                        "In Library: In Progress"
+
+                    LibraryStatus.FINISHED ->
+                        "In Library: Finished"
+
+                    null ->
+                        "+ Want To"
                 }
             )
         }
 
         Spacer(Modifier.height(12.dp))
 
+        if (isFavorited) {
+            FilledTonalButton(
+                onClick = onToggleFavorite,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Saved")
+            }
+        } else {
+            OutlinedButton(
+                onClick = onToggleFavorite,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Save")
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
         OutlinedButton(
-            onClick = { onWriteReview(media.id) },
+            onClick = {
+                onWriteReview(media.id)
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Write Review")
@@ -301,9 +372,18 @@ private fun MediaDetail.middleStatLabel(): String {
 
 private fun MediaDetail.middleStatValue(): String {
     return when (mediaType) {
-        "book" -> pageCount?.toString() ?: "Unknown"
-        "movie" -> runtimeMinutes?.let { "$it min" } ?: "Unknown"
-        "show" -> seasonCount?.toString() ?: "Unknown"
-        else -> mediaType.replaceFirstChar { it.uppercase() }
+        "book" ->
+            pageCount?.toString() ?: "Unknown"
+
+        "movie" ->
+            runtimeMinutes?.let { "$it min" } ?: "Unknown"
+
+        "show" ->
+            seasonCount?.toString() ?: "Unknown"
+
+        else ->
+            mediaType.replaceFirstChar {
+                it.uppercase()
+            }
     }
 }

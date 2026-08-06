@@ -17,7 +17,8 @@ sealed interface MediaDetailUiState {
 
     data class Success(
         val detail: MediaDetail,
-        val libraryStatus: LibraryStatus?
+        val libraryStatus: LibraryStatus?,
+        val isFavorited: Boolean
     ) : MediaDetailUiState
 
     data class Error(
@@ -38,6 +39,12 @@ class MediaDetailViewModel(
     val uiState: StateFlow<MediaDetailUiState> =
         _uiState.asStateFlow()
 
+    private val _actionError =
+        MutableStateFlow<String?>(null)
+
+    val actionError: StateFlow<String?> =
+        _actionError.asStateFlow()
+
     private var currentMediaId: Int? = null
 
     fun load(mediaId: Int) {
@@ -54,16 +61,24 @@ class MediaDetailViewModel(
                         repository.getLibraryItem(mediaId)
                     }.getOrNull()
 
+                val favorite =
+                    runCatching {
+                        repository.getFavorite(mediaId)
+                    }.getOrNull()
+
                 _uiState.value =
                     MediaDetailUiState.Success(
                         detail = detail,
-                        libraryStatus = libraryItem?.status
+                        libraryStatus = libraryItem?.status,
+                        isFavorited = favorite != null
                     )
+
             } catch (error: MediaNotFoundException) {
                 _uiState.value =
                     MediaDetailUiState.Error(
                         message = "Media not found."
                     )
+
             } catch (error: Exception) {
                 _uiState.value =
                     MediaDetailUiState.Error(
@@ -72,6 +87,97 @@ class MediaDetailViewModel(
                     )
             }
         }
+    }
+
+    /*
+     * Optimistic add:
+     * Change the button immediately, then call the server.
+     * If the request fails, restore the original state.
+     */
+    fun addToLibrary() {
+        val currentState =
+            _uiState.value as? MediaDetailUiState.Success
+                ?: return
+
+        val mediaId = currentMediaId ?: return
+
+        if (currentState.libraryStatus != null) {
+            return
+        }
+
+        _uiState.value =
+            currentState.copy(
+                libraryStatus = LibraryStatus.WANT_TO
+            )
+
+        viewModelScope.launch {
+            try {
+                repository.addToLibrary(
+                    mediaId = mediaId,
+                    status = LibraryStatus.WANT_TO
+                )
+
+            } catch (error: Exception) {
+                val latestState =
+                    _uiState.value as? MediaDetailUiState.Success
+                        ?: return@launch
+
+                _uiState.value =
+                    latestState.copy(
+                        libraryStatus = null
+                    )
+
+                _actionError.value =
+                    "Couldn't add to library. Try again."
+            }
+        }
+    }
+
+    /*
+     * Optimistic favorite toggle:
+     * Flip the saved state immediately.
+     * POST when saving, DELETE when unsaving.
+     * Roll back if the request fails.
+     */
+    fun toggleFavorite() {
+        val currentState =
+            _uiState.value as? MediaDetailUiState.Success
+                ?: return
+
+        val mediaId = currentMediaId ?: return
+        val wasFavorited = currentState.isFavorited
+
+        _uiState.value =
+            currentState.copy(
+                isFavorited = !wasFavorited
+            )
+
+        viewModelScope.launch {
+            try {
+                if (wasFavorited) {
+                    repository.removeFavorite(mediaId)
+                } else {
+                    repository.addFavorite(mediaId)
+                }
+
+            } catch (error: Exception) {
+                val latestState =
+                    _uiState.value as? MediaDetailUiState.Success
+                        ?: return@launch
+
+                _uiState.value =
+                    latestState.copy(
+                        isFavorited = wasFavorited
+                    )
+
+                _actionError.value =
+                    "Couldn't update favorite. Try again."
+            }
+        }
+    }
+
+    fun clearActionError() {
+        _actionError.value = null
     }
 
     fun retry() {
