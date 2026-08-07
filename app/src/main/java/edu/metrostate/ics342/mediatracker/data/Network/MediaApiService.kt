@@ -78,13 +78,34 @@ interface MediaApiService {
         @Query("mediaId") mediaId: Int
     ): Response<List<Review>>
 
-    // Week 11 - Save a quote
     @POST("quotes")
     suspend fun createQuote(
         @Body body: CreateQuoteRequest
     ): Response<Quote>
 
-    // Week 11 - Get the user's saved quotes
     @GET("quotes")
-    suspend fun getQuotes(): Response<List<Quote>>
+    suspend fun getQuotes(
+        @Query("public") publicOnly: Boolean? = null
+    ): Response<List<Quote>>
+
+    @PUT("quotes/{id}")
+    suspend fun updateQuote(
+        @Path("id") quoteId: Int,
+        @Body body: UpdateQuoteRequest
+    ): Response<Quote>
+
+    @DELETE("quotes/{id}")
+    suspend fun deleteQuote(
+        @Path("id") quoteId: Int
+    ): Response<Unit>
+
+    @POST("quotes/{id}/likes")
+    suspend fun likeQuote(
+        @Path("id") quoteId: Int
+    ): Response<Unit>
+
+    @DELETE("quotes/{id}/likes")
+    suspend fun unlikeQuote(
+        @Path("id") quoteId: Int
+    ): Response<Unit>
 }

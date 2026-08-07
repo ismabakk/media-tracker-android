@@ -10,7 +10,8 @@ import edu.metrostate.ics342.mediatracker.data.model.Review
 import retrofit2.Response
 
 class DefaultMediaRepository(
-    private val service: MediaApiService = RetrofitInstance.mediaApiService
+    private val service: MediaApiService =
+        RetrofitInstance.mediaApiService
 ) {
 
     suspend fun searchMedia(
@@ -52,7 +53,9 @@ class DefaultMediaRepository(
             )
     }
 
-    suspend fun getLibraryItem(mediaId: Int): LibraryItem? {
+    suspend fun getLibraryItem(
+        mediaId: Int
+    ): LibraryItem? {
         val response: Response<LibraryItem> =
             service.getLibraryItem(mediaId)
 
@@ -124,8 +127,11 @@ class DefaultMediaRepository(
             )
     }
 
-    suspend fun removeFromLibrary(mediaId: Int) {
-        val response = service.removeFromLibrary(mediaId)
+    suspend fun removeFromLibrary(
+        mediaId: Int
+    ) {
+        val response =
+            service.removeFromLibrary(mediaId)
 
         if (!response.isSuccessful) {
             throw IllegalStateException(
@@ -150,7 +156,9 @@ class DefaultMediaRepository(
         return response.body() ?: emptyList()
     }
 
-    suspend fun getFavorite(mediaId: Int): Favorite? {
+    suspend fun getFavorite(
+        mediaId: Int
+    ): Favorite? {
         val response: Response<Favorite> =
             service.getFavorite(mediaId)
 
@@ -167,7 +175,9 @@ class DefaultMediaRepository(
         return response.body()
     }
 
-    suspend fun addFavorite(mediaId: Int): Favorite {
+    suspend fun addFavorite(
+        mediaId: Int
+    ): Favorite {
         val request = AddToFavoritesRequest(
             mediaId = mediaId
         )
@@ -193,8 +203,11 @@ class DefaultMediaRepository(
             )
     }
 
-    suspend fun removeFavorite(mediaId: Int) {
-        val response = service.removeFavorite(mediaId)
+    suspend fun removeFavorite(
+        mediaId: Int
+    ) {
+        val response =
+            service.removeFavorite(mediaId)
 
         if (!response.isSuccessful) {
             throw IllegalStateException(
@@ -203,8 +216,11 @@ class DefaultMediaRepository(
         }
     }
 
-    suspend fun getReviews(mediaId: Int): List<Review> {
-        val response = service.getReviews(mediaId)
+    suspend fun getReviews(
+        mediaId: Int
+    ): List<Review> {
+        val response =
+            service.getReviews(mediaId)
 
         if (!response.isSuccessful) {
             throw IllegalStateException(
@@ -228,7 +244,8 @@ class DefaultMediaRepository(
             isPublic = isPublic
         )
 
-        val response = service.createQuote(request)
+        val response =
+            service.createQuote(request)
 
         if (!response.isSuccessful) {
             throw IllegalStateException(
@@ -243,7 +260,10 @@ class DefaultMediaRepository(
     }
 
     suspend fun getQuotes(): List<Quote> {
-        val response = service.getQuotes()
+        val response =
+            service.getQuotes(
+                publicOnly = null
+            )
 
         if (!response.isSuccessful) {
             throw IllegalStateException(
@@ -252,6 +272,100 @@ class DefaultMediaRepository(
         }
 
         return response.body() ?: emptyList()
+    }
+
+    suspend fun getPublicQuotes(): List<Quote> {
+        val response =
+            service.getQuotes(
+                publicOnly = true
+            )
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Failed to load public quotes. Code: ${response.code()}"
+            )
+        }
+
+        return response.body() ?: emptyList()
+    }
+
+    suspend fun updateQuote(
+        quoteId: Int,
+        quoteText: String,
+        pageNumber: Int?,
+        isPublic: Boolean
+    ): Quote {
+        val request = UpdateQuoteRequest(
+            quoteText = quoteText,
+            pageNumber = pageNumber,
+            isPublic = isPublic
+        )
+
+        val response =
+            service.updateQuote(
+                quoteId = quoteId,
+                body = request
+            )
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Failed to update quote. Code: ${response.code()}"
+            )
+        }
+
+        return response.body()
+            ?: throw IllegalStateException(
+                "Updated quote response was empty."
+            )
+    }
+
+    suspend fun deleteQuote(
+        quoteId: Int
+    ) {
+        val response =
+            service.deleteQuote(quoteId)
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Failed to delete quote. Code: ${response.code()}"
+            )
+        }
+    }
+
+    /*
+     * Returns true when the like was added.
+     * Returns false for a 409 because the quote was already liked.
+     */
+    suspend fun likeQuote(
+        quoteId: Int
+    ): Boolean {
+        val response =
+            service.likeQuote(quoteId)
+
+        if (response.code() == 409) {
+            return false
+        }
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Failed to like quote. Code: ${response.code()}"
+            )
+        }
+
+        return true
+    }
+
+    suspend fun unlikeQuote(
+        quoteId: Int
+    ) {
+        val response =
+            service.unlikeQuote(quoteId)
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Failed to unlike quote. Code: ${response.code()}"
+            )
+        }
     }
 }
 
