@@ -3,6 +3,7 @@ package edu.metrostate.ics342.mediatracker.ui.detail
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,6 +35,13 @@ fun MediaDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val actionError by viewModel.actionError.collectAsState()
+
+    // Week 11 quote state
+    val quoteText by viewModel.quoteText.collectAsState()
+    val quotePageNumber by viewModel.quotePageNumber.collectAsState()
+    val quoteIsPublic by viewModel.quoteIsPublic.collectAsState()
+    val isSavingQuote by viewModel.isSavingQuote.collectAsState()
+    val quoteMessage by viewModel.quoteMessage.collectAsState()
 
     val snackbarHostState = remember {
         SnackbarHostState()
@@ -63,6 +72,7 @@ fun MediaDetailScreen(
                 .padding(innerPadding)
         ) {
             when (val state = uiState) {
+
                 MediaDetailUiState.Loading -> {
                     LoadingScreen()
                 }
@@ -80,12 +90,34 @@ fun MediaDetailScreen(
                         media = state.detail,
                         libraryStatus = state.libraryStatus,
                         isFavorited = state.isFavorited,
+
+                        quoteText = quoteText,
+                        quotePageNumber = quotePageNumber,
+                        quoteIsPublic = quoteIsPublic,
+                        isSavingQuote = isSavingQuote,
+                        quoteMessage = quoteMessage,
+
+                        onQuoteTextChange =
+                            viewModel::updateQuoteText,
+
+                        onQuotePageNumberChange =
+                            viewModel::updateQuotePageNumber,
+
+                        onQuoteVisibilityChange =
+                            viewModel::updateQuoteVisibility,
+
+                        onSaveQuote = {
+                            viewModel.saveQuote()
+                        },
+
                         onAddToLibrary = {
                             viewModel.addToLibrary()
                         },
+
                         onToggleFavorite = {
                             viewModel.toggleFavorite()
                         },
+
                         onNavigateBack = onNavigateBack,
                         onWriteReview = onWriteReview
                     )
@@ -119,6 +151,7 @@ private fun ErrorScreen(
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
@@ -150,11 +183,24 @@ private fun MediaDetailContent(
     media: MediaDetail,
     libraryStatus: LibraryStatus?,
     isFavorited: Boolean,
+
+    quoteText: String,
+    quotePageNumber: String,
+    quoteIsPublic: Boolean,
+    isSavingQuote: Boolean,
+    quoteMessage: String?,
+
+    onQuoteTextChange: (String) -> Unit,
+    onQuotePageNumberChange: (String) -> Unit,
+    onQuoteVisibilityChange: (Boolean) -> Unit,
+    onSaveQuote: () -> Unit,
+
     onAddToLibrary: () -> Unit,
     onToggleFavorite: () -> Unit,
     onNavigateBack: () -> Unit,
     onWriteReview: (Int) -> Unit
 ) {
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -162,6 +208,7 @@ private fun MediaDetailContent(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
@@ -170,7 +217,8 @@ private fun MediaDetailContent(
                 onClick = onNavigateBack
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector =
+                        Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
                 )
             }
@@ -183,20 +231,29 @@ private fun MediaDetailContent(
                 width = 120.dp,
                 height = 160.dp
             ),
-            color = MaterialTheme.colorScheme.primaryContainer,
+            color =
+                MaterialTheme.colorScheme.primaryContainer,
             shape = RoundedCornerShape(12.dp)
         ) {
+
             Box(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = when (media.mediaType) {
-                        "book" -> Icons.AutoMirrored.Outlined.MenuBook
-                        "movie" -> Icons.Outlined.Movie
-                        else -> Icons.Outlined.Tv
-                    },
+                    imageVector =
+                        when (media.mediaType) {
+                            "book" ->
+                                Icons.AutoMirrored.Outlined.MenuBook
+
+                            "movie" ->
+                                Icons.Outlined.Movie
+
+                            else ->
+                                Icons.Outlined.Tv
+                        },
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint =
+                        MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(56.dp)
                 )
             }
@@ -206,27 +263,32 @@ private fun MediaDetailContent(
 
         Text(
             text = media.title,
-            style = MaterialTheme.typography.headlineSmall,
+            style =
+                MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
 
         Text(
             text = media.creatorName(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style =
+                MaterialTheme.typography.bodyMedium,
+            color =
+                MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
 
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = if (media.ratingCount > 0) {
-                "★ ${media.averageRating} (${media.ratingCount})"
-            } else {
-                "Not yet rated"
-            },
-            style = MaterialTheme.typography.bodyMedium,
+            text =
+                if (media.ratingCount > 0) {
+                    "★ ${media.averageRating} (${media.ratingCount})"
+                } else {
+                    "Not yet rated"
+                },
+            style =
+                MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
         )
 
@@ -234,11 +296,15 @@ private fun MediaDetailContent(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement =
+                Arrangement.spacedBy(12.dp)
         ) {
+
             InfoBox(
                 label = "Year",
-                value = media.publishedYear?.toString() ?: "Unknown",
+                value =
+                    media.publishedYear?.toString()
+                        ?: "Unknown",
                 modifier = Modifier.weight(1f)
             )
 
@@ -250,7 +316,9 @@ private fun MediaDetailContent(
 
             InfoBox(
                 label = "Genre",
-                value = media.genres.firstOrNull() ?: "Unknown",
+                value =
+                    media.genres.firstOrNull()
+                        ?: "Unknown",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -259,7 +327,8 @@ private fun MediaDetailContent(
 
         Text(
             text = "About",
-            style = MaterialTheme.typography.titleMedium,
+            style =
+                MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth()
         )
@@ -267,8 +336,11 @@ private fun MediaDetailContent(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = media.description ?: "No description is available.",
-            style = MaterialTheme.typography.bodyMedium,
+            text =
+                media.description
+                    ?: "No description is available.",
+            style =
+                MaterialTheme.typography.bodyMedium,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -279,33 +351,39 @@ private fun MediaDetailContent(
             enabled = libraryStatus == null,
             modifier = Modifier.fillMaxWidth()
         ) {
+
             Text(
-                text = when (libraryStatus) {
-                    LibraryStatus.WANT_TO ->
-                        "In Library: Want To"
+                text =
+                    when (libraryStatus) {
 
-                    LibraryStatus.IN_PROGRESS ->
-                        "In Library: In Progress"
+                        LibraryStatus.WANT_TO ->
+                            "In Library: Want To"
 
-                    LibraryStatus.FINISHED ->
-                        "In Library: Finished"
+                        LibraryStatus.IN_PROGRESS ->
+                            "In Library: In Progress"
 
-                    null ->
-                        "+ Want To"
-                }
+                        LibraryStatus.FINISHED ->
+                            "In Library: Finished"
+
+                        null ->
+                            "+ Want To"
+                    }
             )
         }
 
         Spacer(Modifier.height(12.dp))
 
         if (isFavorited) {
+
             FilledTonalButton(
                 onClick = onToggleFavorite,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Saved")
             }
+
         } else {
+
             OutlinedButton(
                 onClick = onToggleFavorite,
                 modifier = Modifier.fillMaxWidth()
@@ -324,6 +402,172 @@ private fun MediaDetailContent(
         ) {
             Text("Write Review")
         }
+
+        /*
+         * WEEK 11
+         * Quote Collection
+         */
+
+        Spacer(Modifier.height(32.dp))
+
+        HorizontalDivider()
+
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            text = "Save a Quote",
+            style =
+                MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text =
+                "Save a favorite passage or line from ${media.title}.",
+            style =
+                MaterialTheme.typography.bodyMedium,
+            color =
+                MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = quoteText,
+            onValueChange = onQuoteTextChange,
+            label = {
+                Text("Quote")
+            },
+            placeholder = {
+                Text("Enter quote text")
+            },
+            supportingText = {
+                Text("${quoteText.length}/500")
+            },
+            minLines = 3,
+            maxLines = 6,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = quotePageNumber,
+            onValueChange =
+                onQuotePageNumberChange,
+            label = {
+                Text("Page number")
+            },
+            placeholder = {
+                Text("Optional")
+            },
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType =
+                        KeyboardType.Number
+                ),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment =
+                Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.SpaceBetween
+        ) {
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+
+                Text(
+                    text = "Public Quote",
+                    style =
+                        MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Text(
+                    text =
+                        if (quoteIsPublic) {
+                            "Other users can see this quote"
+                        } else {
+                            "Only you can see this quote"
+                        },
+                    style =
+                        MaterialTheme.typography.bodySmall,
+                    color =
+                        MaterialTheme.colorScheme
+                            .onSurfaceVariant
+                )
+            }
+
+            Switch(
+                checked = quoteIsPublic,
+                onCheckedChange =
+                    onQuoteVisibilityChange
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Button(
+            onClick = onSaveQuote,
+            enabled =
+                quoteText.isNotBlank() &&
+                        !isSavingQuote,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+
+            if (isSavingQuote) {
+
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+
+                Spacer(Modifier.width(8.dp))
+
+                Text("Saving...")
+
+            } else {
+
+                Text("Save Quote")
+            }
+        }
+
+        quoteMessage?.let { message ->
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = message,
+                style =
+                    MaterialTheme.typography.bodyMedium,
+                color =
+                    if (
+                        message.contains(
+                            "successfully",
+                            ignoreCase = true
+                        )
+                    ) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -333,23 +577,30 @@ private fun InfoBox(
     value: String,
     modifier: Modifier = Modifier
 ) {
+
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color =
+            MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(10.dp)
     ) {
+
         Column(
             modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment =
+                Alignment.CenterHorizontally
         ) {
+
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall
+                style =
+                    MaterialTheme.typography.labelSmall
             )
 
             Text(
                 text = value,
-                style = MaterialTheme.typography.bodySmall,
+                style =
+                    MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
@@ -358,7 +609,10 @@ private fun InfoBox(
 }
 
 private fun MediaDetail.creatorName(): String {
-    return author ?: director ?: creator ?: "Unknown"
+    return author
+        ?: director
+        ?: creator
+        ?: "Unknown"
 }
 
 private fun MediaDetail.middleStatLabel(): String {
@@ -372,14 +626,19 @@ private fun MediaDetail.middleStatLabel(): String {
 
 private fun MediaDetail.middleStatValue(): String {
     return when (mediaType) {
+
         "book" ->
-            pageCount?.toString() ?: "Unknown"
+            pageCount?.toString()
+                ?: "Unknown"
 
         "movie" ->
-            runtimeMinutes?.let { "$it min" } ?: "Unknown"
+            runtimeMinutes?.let {
+                "$it min"
+            } ?: "Unknown"
 
         "show" ->
-            seasonCount?.toString() ?: "Unknown"
+            seasonCount?.toString()
+                ?: "Unknown"
 
         else ->
             mediaType.replaceFirstChar {

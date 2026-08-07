@@ -4,6 +4,7 @@ import edu.metrostate.ics342.mediatracker.data.model.Favorite
 import edu.metrostate.ics342.mediatracker.data.model.LibraryItem
 import edu.metrostate.ics342.mediatracker.data.model.Media
 import edu.metrostate.ics342.mediatracker.data.model.MediaDetail
+import edu.metrostate.ics342.mediatracker.data.model.Quote
 import edu.metrostate.ics342.mediatracker.data.model.Review
 import retrofit2.Response
 import retrofit2.http.Body
@@ -76,4 +77,14 @@ interface MediaApiService {
     suspend fun getReviews(
         @Query("mediaId") mediaId: Int
     ): Response<List<Review>>
+
+    // Week 11 - Save a quote
+    @POST("quotes")
+    suspend fun createQuote(
+        @Body body: CreateQuoteRequest
+    ): Response<Quote>
+
+    // Week 11 - Get the user's saved quotes
+    @GET("quotes")
+    suspend fun getQuotes(): Response<List<Quote>>
 }

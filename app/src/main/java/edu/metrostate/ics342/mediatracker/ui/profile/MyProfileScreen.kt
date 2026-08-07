@@ -25,25 +25,45 @@ import coil.compose.AsyncImage
 fun MyProfileScreen(
     onEditProfile: () -> Unit,
     onSettingsClick: () -> Unit,
+    onMyQuotesClick: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
-    val user    by viewModel.currentUser.collectAsState()
+    val user by viewModel.currentUser.collectAsState()
     val library by viewModel.libraryPreview.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
         TopAppBar(
-            title = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.profile_title)) },
+            title = {
+                Text(
+                    stringResource(
+                        edu.metrostate.ics342.mediatracker.R.string.profile_title
+                    )
+                )
+            },
             actions = {
-                IconButton(onClick = onSettingsClick) {
-                    Icon(Icons.Outlined.Settings, stringResource(edu.metrostate.ics342.mediatracker.R.string.profile_settings))
+                IconButton(
+                    onClick = onSettingsClick
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = stringResource(
+                            edu.metrostate.ics342.mediatracker.R.string.profile_settings
+                        )
+                    )
                 }
             }
         )
 
         if (user == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator()
             }
+
             return@Column
         }
 
@@ -53,28 +73,39 @@ fun MyProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(
+                    horizontal = 24.dp,
+                    vertical = 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Box(
-                modifier = Modifier.size(88.dp).clip(CircleShape),
+                modifier = Modifier
+                    .size(88.dp)
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (u.avatarUrl != null) {
                     AsyncImage(
-                        model             = u.avatarUrl,
+                        model = u.avatarUrl,
                         contentDescription = u.displayName,
-                        contentScale      = ContentScale.Crop,
-                        modifier          = Modifier.fillMaxSize()
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 } else {
                     Surface(
-                        color    = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.primaryContainer,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                u.displayName.firstOrNull()?.toString() ?: "?",
+                                text = u.displayName
+                                    .firstOrNull()
+                                    ?.toString()
+                                    ?: "?",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -83,80 +114,182 @@ fun MyProfileScreen(
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
-            Text(u.displayName, style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(2.dp))
-            Text("@${u.username}", style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            Text(
+                text = u.displayName,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(
+                modifier = Modifier.height(2.dp)
+            )
+
+            Text(
+                text = "@${u.username}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             if (!u.bio.isNullOrBlank()) {
-                Spacer(Modifier.height(8.dp))
-                Text(u.bio, style = MaterialTheme.typography.bodyMedium,
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+
+                Text(
+                    text = u.bio,
+                    style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(u.followerCount.toString(),  edu.metrostate.ics342.mediatracker.R.string.profile_followers)
-                StatItem(u.followingCount.toString(), edu.metrostate.ics342.mediatracker.R.string.profile_following)
-                StatItem(u.trackedCount.toString(),   edu.metrostate.ics342.mediatracker.R.string.profile_tracked)
+                StatItem(
+                    value = u.followerCount.toString(),
+                    labelRes = edu.metrostate.ics342.mediatracker.R.string.profile_followers
+                )
+
+                StatItem(
+                    value = u.followingCount.toString(),
+                    labelRes = edu.metrostate.ics342.mediatracker.R.string.profile_following
+                )
+
+                StatItem(
+                    value = u.trackedCount.toString(),
+                    labelRes = edu.metrostate.ics342.mediatracker.R.string.profile_tracked
+                )
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
 
             OutlinedButton(
-                onClick  = onEditProfile,
+                onClick = onEditProfile,
                 modifier = Modifier.fillMaxWidth()
-            ) { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.profile_edit_button)) }
+            ) {
+                Text(
+                    stringResource(
+                        edu.metrostate.ics342.mediatracker.R.string.profile_edit_button
+                    )
+                )
+            }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            Button(
+                onClick = onMyQuotesClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("My Quotes")
+            }
+
+            Spacer(
+                modifier = Modifier.height(24.dp)
+            )
+
             HorizontalDivider()
-            Spacer(Modifier.height(16.dp))
 
-            Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.profile_recently_tracked), style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.align(Alignment.Start))
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
 
-            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(
+                    edu.metrostate.ics342.mediatracker.R.string.profile_recently_tracked
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
             if (library.isEmpty()) {
-                Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.profile_nothing_tracked),
+                Text(
+                    text = stringResource(
+                        edu.metrostate.ics342.mediatracker.R.string.profile_nothing_tracked
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             } else {
                 library.forEach { item ->
+
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+
                         Box(
                             modifier = Modifier
-                                .size(40.dp, 56.dp)
-                                .clip(RoundedCornerShape(4.dp)),
+                                .size(
+                                    width = 40.dp,
+                                    height = 56.dp
+                                )
+                                .clip(
+                                    RoundedCornerShape(4.dp)
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Surface(color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.fillMaxSize()) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(when (item.media.mediaType) {
-                                        "book" -> "📖"; "movie" -> "🎬"; "show" -> "📺"
-                                        else -> "?"
-                                    })
+
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+
+                                Box(
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = when (
+                                            item.media.mediaType
+                                        ) {
+                                            "book" -> "📖"
+                                            "movie" -> "🎬"
+                                            "show" -> "📺"
+                                            else -> "?"
+                                        }
+                                    )
                                 }
                             }
                         }
-                        Spacer(Modifier.width(12.dp))
+
+                        Spacer(
+                            modifier = Modifier.width(12.dp)
+                        )
+
                         Column {
-                            Text(item.media.title, style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium)
-                            Text(stringResource(item.status.labelRes),
+
+                            Text(
+                                text = item.media.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Text(
+                                text = stringResource(
+                                    item.status.labelRes
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
@@ -166,10 +299,23 @@ fun MyProfileScreen(
 }
 
 @Composable
-private fun StatItem(value: String, labelRes: Int) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(stringResource(labelRes), style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun StatItem(
+    value: String,
+    labelRes: Int
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = stringResource(labelRes),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

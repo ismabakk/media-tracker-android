@@ -5,6 +5,7 @@ import edu.metrostate.ics342.mediatracker.data.model.LibraryItem
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.Media
 import edu.metrostate.ics342.mediatracker.data.model.MediaDetail
+import edu.metrostate.ics342.mediatracker.data.model.Quote
 import edu.metrostate.ics342.mediatracker.data.model.Review
 import retrofit2.Response
 
@@ -208,6 +209,45 @@ class DefaultMediaRepository(
         if (!response.isSuccessful) {
             throw IllegalStateException(
                 "Failed to load reviews. Code: ${response.code()}"
+            )
+        }
+
+        return response.body() ?: emptyList()
+    }
+
+    suspend fun createQuote(
+        mediaId: Int,
+        quoteText: String,
+        pageNumber: Int?,
+        isPublic: Boolean
+    ): Quote {
+        val request = CreateQuoteRequest(
+            mediaId = mediaId,
+            quoteText = quoteText,
+            pageNumber = pageNumber,
+            isPublic = isPublic
+        )
+
+        val response = service.createQuote(request)
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Failed to save quote. Code: ${response.code()}"
+            )
+        }
+
+        return response.body()
+            ?: throw IllegalStateException(
+                "Quote response was empty."
+            )
+    }
+
+    suspend fun getQuotes(): List<Quote> {
+        val response = service.getQuotes()
+
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "Failed to load quotes. Code: ${response.code()}"
             )
         }
 

@@ -45,6 +45,40 @@ class MediaDetailViewModel(
     val actionError: StateFlow<String?> =
         _actionError.asStateFlow()
 
+    /*
+     * Week 11 quote form state
+     */
+
+    private val _quoteText =
+        MutableStateFlow("")
+
+    val quoteText: StateFlow<String> =
+        _quoteText.asStateFlow()
+
+    private val _quotePageNumber =
+        MutableStateFlow("")
+
+    val quotePageNumber: StateFlow<String> =
+        _quotePageNumber.asStateFlow()
+
+    private val _quoteIsPublic =
+        MutableStateFlow(false)
+
+    val quoteIsPublic: StateFlow<Boolean> =
+        _quoteIsPublic.asStateFlow()
+
+    private val _isSavingQuote =
+        MutableStateFlow(false)
+
+    val isSavingQuote: StateFlow<Boolean> =
+        _isSavingQuote.asStateFlow()
+
+    private val _quoteMessage =
+        MutableStateFlow<String?>(null)
+
+    val quoteMessage: StateFlow<String?> =
+        _quoteMessage.asStateFlow()
+
     private var currentMediaId: Int? = null
 
     fun load(mediaId: Int) {
@@ -91,8 +125,8 @@ class MediaDetailViewModel(
 
     /*
      * Optimistic add:
-     * Change the button immediately, then call the server.
-     * If the request fails, restore the original state.
+     * Change the button immediately then call the server.
+     * If the request fails restore the original state.
      */
     fun addToLibrary() {
         val currentState =
@@ -136,7 +170,6 @@ class MediaDetailViewModel(
     /*
      * Optimistic favorite toggle:
      * Flip the saved state immediately.
-     * POST when saving, DELETE when unsaving.
      * Roll back if the request fails.
      */
     fun toggleFavorite() {
@@ -174,6 +207,78 @@ class MediaDetailViewModel(
                     "Couldn't update favorite. Try again."
             }
         }
+    }
+
+    /*
+     * Week 11 quote form functions
+     */
+
+    fun updateQuoteText(value: String) {
+        if (value.length <= 500) {
+            _quoteText.value = value
+            _quoteMessage.value = null
+        }
+    }
+
+    fun updateQuotePageNumber(value: String) {
+        if (value.isBlank() || value.all { character ->
+                character.isDigit()
+            }
+        ) {
+            _quotePageNumber.value = value
+            _quoteMessage.value = null
+        }
+    }
+
+    fun updateQuoteVisibility(isPublic: Boolean) {
+        _quoteIsPublic.value = isPublic
+    }
+
+    fun saveQuote() {
+        val mediaId = currentMediaId ?: return
+        val cleanedQuote = _quoteText.value.trim()
+
+        if (cleanedQuote.isBlank()) {
+            _quoteMessage.value =
+                "Quote text is required."
+            return
+        }
+
+        if (_isSavingQuote.value) {
+            return
+        }
+
+        viewModelScope.launch {
+            _isSavingQuote.value = true
+            _quoteMessage.value = null
+
+            try {
+                repository.createQuote(
+                    mediaId = mediaId,
+                    quoteText = cleanedQuote,
+                    pageNumber =
+                        _quotePageNumber.value.toIntOrNull(),
+                    isPublic = _quoteIsPublic.value
+                )
+
+                _quoteText.value = ""
+                _quotePageNumber.value = ""
+                _quoteIsPublic.value = false
+                _quoteMessage.value =
+                    "Quote saved successfully."
+
+            } catch (error: Exception) {
+                _quoteMessage.value =
+                    "Couldn't save quote. Try again."
+
+            } finally {
+                _isSavingQuote.value = false
+            }
+        }
+    }
+
+    fun clearQuoteMessage() {
+        _quoteMessage.value = null
     }
 
     fun clearActionError() {
