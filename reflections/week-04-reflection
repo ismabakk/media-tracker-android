@@ -1,0 +1,53 @@
+# Week 04 Reflection
+
+**Name:** Ismail Bakkaoui
+
+**Date:** 06/11/2026
+
+---
+
+## Commits This Week
+
+**Link:** https://github.com/ismabakk/media-tracker-android/pull/4
+
+---
+
+## Code Review
+
+**Reviewed:** Issa Ali
+
+**Link to my review:** https://github.com/Issa-Ismail-Ali/media-tracker-android/pull/4#issuecomment-4686695817
+
+### What I Looked At
+
+I looked over a classmate - Issa Ali's RegisterScreen implementation> I looked at how his registration form and how it handled user input validation and navigation. I also looked over the updates that was made to the string resources and reveiwed how they connected to the UI in the registration screen.
+
+### What I Noticed
+
+The one thing that I noticed was  the registration screen had included validation through the attemptRegister() function. Instead of allowing registration immediately it waits and the function checks whether the display name, email, username, password, and confirm password fields all have the values and whether the passwords match before continuing. This caught my eye because my implementation only handled navigation whenever I touched the sign Up button. Issas implementation adds the additional layer of user feedback that prevents users from moving forward with invalid data.
+
+I also noticed that most of the labels, prompts, and button text were put into the strings.xml rather than being hardcoded into the composable. I think this improves maintainability because the UI text can be updated from one location instead of it uopdating throughout the codebase. It  also would make it a lot easier to support multiple languages in the future.
+
+### Comments I Left
+
+I commented the validation logic was a really smart/strong improvement because it helps guide any of the users through the registration process and it also doesn't allow for any invalid submissions. I suggested that because a RegisterViewModel is already there and present, any future improvements could move validation logic into the ViewModel  that way the business logic is separated from the UI layer which makes it easier to test and maintain.
+
+---
+
+## One Thing I Understood More Deeply
+
+When I was building the registration screen I feel like I gained a better understanding of how state drives the user interface in Jetpack Compose. Before this week I kinda knew that remember and mutableStateOf were needed for the text fields but I saw them as required syntax. After adding in the Display Name, Username, Email, Password, and Confirm Password fields. I saw how compose automatically updated the UI if any one of those state values changes. The text fields remain synchronized together with user input since the UI reacts to state changes instead of needing manual refreshes.
+
+Another thing that I started to understand more was the purpose of callback functions like  onRegisterSuccess() and onNavigateToLogin(). At first I just thought the navigation would happen inside the screen itself but I learned that the Composable only signals that an had occurred while another part of the application handles navigation. Understanding that separation helped me really see how Compose keeps UI code more focused on presentation. This I feel like allowed application behavior to be managed elsewhere.
+
+---
+
+## One Thing I'm Still Confused About
+
+I'm still a little confused and trying to understand where the boundary should be between local Compose state and ViewModel state. Because my registration screen right now stores all form values using `remember` and `mutableStateOf`, the thing is, it works well for this assignment. But after lokinmg over another implementation that included a RegisterViewModel I started wondering which responsibilities belong in the ViewModel and which should stay inside the Composable. Kind of confuses me a little. Specifically I'm still confdused if validation logic like password matching should remain in the UI layer or should it be moved into somewhere like the ViewModel so that way it can be reused, tested, and survive configuration changes.
+
+---
+
+## Anything Else
+
+This week I thankfully completed the registration screen and I did this by adding all five of the required input fields, account creation UI elements, navigation options, and application branding. Also building the screen helped me become more comfortable with Compose layouts, and   state management. Reviewing another student's implementation was also kind of helpful because it showed me a different approach for handling validation.
