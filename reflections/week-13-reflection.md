@@ -192,4 +192,4 @@ My biggest advice to someone starting Android development would be not to expect
 
 Things like ViewModels, state  navigation API calls,  and Compose started making more sense once I used them together in the actual app. I would also tell them to read their error messages instead of randomly changing code.
 
-If I  started ICS 342 again  I would spend more time understanding how the UI, ViewModel repository  and API  connect instead of only trying to get each assignment working.
+If I  started ICS 342 again I would spend more time understanding how the UI, ViewModel repository  and API  connect instead of only trying to get each assignment working.
